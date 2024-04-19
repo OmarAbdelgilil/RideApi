@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using WebApplication2.Models;
 
 namespace WebApplication1.Data
 {
@@ -37,8 +38,15 @@ namespace WebApplication1.Data
         {
             table.Remove(entity);
         }
-
-        public async Task<bool> Save()
+        public async Task DeleteAsyncByEmail(String email)
+        {
+            T? entity = await table.FindAsync(email);
+            if (entity != null)
+            {
+                table.Remove(entity);
+            }
+        }
+            public async Task<bool> Save()
         {
             return await _db.SaveChangesAsync() > 0;
         }

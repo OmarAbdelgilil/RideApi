@@ -1,16 +1,16 @@
-﻿using Microsoft.AspNetCore.DataProtection.KeyManagement;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+using WebApplication2.Models;
 
-namespace WebApplication2.Models
+namespace WebApplication2.Dtos
 {
-    public class Driver
+    public class NewDriverDto
     {
-		[Key]
-        [ForeignKey("Credentials")]
+        [Key]
         [Required]
+        [EmailAddress(ErrorMessage = "Invalid Email Address")]
         public String? Email { get; set; }
-
+        public Credentials? Credentials { get; set; }
         [Required]
         public String? Username { get; set; }
         [Required]
@@ -24,14 +24,17 @@ namespace WebApplication2.Models
         [Required]
         public String? Region { get; set; }
 
-        
+
         public Boolean Availability { get; set; } = false;
-        
+
         public Double Rating { get; set; } = 0;
-        
+
         public Boolean Blocked { get; set; } = false;
 
-        public ICollection<Rides>? Rides { get; set; }
-
+        [Required]
+        public String? Password { get; set; }
+        [Required]
+        public String? ConfirmPassword { get; set; }
+        public String Role = "Driver";
     }
 }

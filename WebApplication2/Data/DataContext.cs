@@ -12,13 +12,6 @@ namespace WebApplication1.Data
         public DbSet<Rides> Rides { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Configure Driver entity
-            modelBuilder.Entity<Driver>()
-                .HasOne(d => d.Credentials)
-                .WithOne()
-                .HasForeignKey<Driver>(d => d.Email)
-                .OnDelete(DeleteBehavior.Cascade); // Specify cascade behavior
-
             modelBuilder.Entity<Driver>()
                 .HasMany(d => d.Rides)
                 .WithOne(r => r.Driver)
