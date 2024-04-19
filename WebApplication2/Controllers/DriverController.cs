@@ -33,7 +33,7 @@ namespace WebApplication2.Controllers
             return Ok(driver);
         }
 
-        [HttpGet("getDriverByEmail")]
+        [HttpGet("getDriverByEmail/{email}")]
         public async Task<IActionResult> GetDriverByEmail(string email)
         {
             Driver driver= await _DriverRepository.GetByEmailAsync(email);
@@ -41,7 +41,7 @@ namespace WebApplication2.Controllers
             return Ok(driver);
 
         }
-        [HttpDelete("deleteDriver")]
+        [HttpDelete("deleteDriver/{email}")]
         public async Task<IActionResult> DeleteDriver(String email)
         {
             Driver checkDriver = await _DriverRepository.GetByEmailAsync(email);
@@ -152,7 +152,7 @@ namespace WebApplication2.Controllers
                     driver.Region = (string)newValue;
                     break;
                 case "availability":
-                    driver.Smoking = newValue.ToLower() == "true" ? true : false;
+                    driver.Availability = newValue.ToLower() == "true" ? true : false;
                     break;
                 case "blocked":
                     driver.Smoking = newValue.ToLower() == "true"? true : false;

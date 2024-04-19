@@ -10,7 +10,6 @@ namespace WebApplication2.Dtos
         [Required]
         [EmailAddress(ErrorMessage = "Invalid Email Address")]
         public String? Email { get; set; }
-        public Credentials? Credentials { get; set; }
         [Required]
         public String? Username { get; set; }
         [Required]
@@ -23,13 +22,6 @@ namespace WebApplication2.Dtos
         public Boolean Smoking { get; set; }
         [Required]
         public String? Region { get; set; }
-
-
-        public Boolean Availability { get; set; } = false;
-
-        public Double Rating { get; set; } = 0;
-
-        public Boolean Blocked { get; set; } = false;
 
         [Required]
         public String? Password { get; set; }

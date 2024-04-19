@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace WebApplication2.Models
 {
@@ -31,7 +32,9 @@ namespace WebApplication2.Models
         
         public Boolean Blocked { get; set; } = false;
 
-        public ICollection<Rides>? Rides { get; set; }
+        public  ICollection<Rides>? Rides { get; set; }
+
+        
 
     }
 }

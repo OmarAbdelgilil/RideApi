@@ -8,6 +8,7 @@ namespace WebApplication1.Data
         public DataContext(DbContextOptions<DataContext> options) : base(options) { }
         public DbSet<Passanger> Passanger { get; set; }
         public DbSet<Driver> Driver { get; set; }
+
         public DbSet<Credentials> Credentials { get; set; }
         public DbSet<Rides> Rides { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 using WebApplication1.Data;
 using WebApplication2.Models;
 
@@ -19,6 +20,7 @@ builder.Services.AddScoped<IDataRepository<Passanger>, DataRepository<Passanger>
 builder.Services.AddScoped<IDataRepository<Driver>, DataRepository<Driver>>();
 builder.Services.AddScoped<IDataRepository<Credentials>, DataRepository<Credentials>>();
 builder.Services.AddScoped<IDataRepository<Rides>, DataRepository<Rides>>();
+builder.Services.AddControllersWithViews().AddJsonOptions(options => options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

@@ -1,5 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace WebApplication2.Models
 {
@@ -17,7 +19,9 @@ namespace WebApplication2.Models
         [Required]
         public int Gender { get; set; }
 
-        public ICollection<Rides>? Rides { get; set; }
+    
+        public  ICollection<Rides>? Rides { get; set; }
+
 
     }
 }

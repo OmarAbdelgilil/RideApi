@@ -18,16 +18,49 @@ namespace WebApplication2.Controllers
 
         private readonly IDataRepository<Passanger> _PassangerRepository;
         private readonly IDataRepository<Credentials> _CredentialsRepository;
-
+        private readonly IDataRepository<Driver> _DriverRepository;
+        private readonly IDataRepository<Rides> _RidesRepository;
 
         public PassangerController(
              IDataRepository<Passanger> PassangerRepository,
-        IDataRepository<Credentials> CredentialsRepository
+        IDataRepository<Credentials> CredentialsRepository,
+        IDataRepository<Driver> DriverRepository,
+        IDataRepository<Rides> RidesRepository
             )
         {
             _PassangerRepository = PassangerRepository;
             _CredentialsRepository = CredentialsRepository;
+            _DriverRepository = DriverRepository;
+            _RidesRepository = RidesRepository;
 
+        }
+
+        private double CalculateDistance(double lon1, double lat1, double lon2, double lat2)
+        {
+            const double R = 6371.0; // Radius of the Earth in kilometers
+
+            // Convert latitude and longitude from degrees to radians
+            double lon1Rad = ToRadians(lon1);
+            double lat1Rad = ToRadians(lat1);
+            double lon2Rad = ToRadians(lon2);
+            double lat2Rad = ToRadians(lat2);
+
+            // Haversine formula
+            double dLon = lon2Rad - lon1Rad;
+            double dLat = lat2Rad - lat1Rad;
+            double a = Math.Pow(Math.Sin(dLat / 2), 2) +
+                       Math.Cos(lat1Rad) * Math.Cos(lat2Rad) *
+                       Math.Pow(Math.Sin(dLon / 2), 2);
+            double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+
+            // Calculate the distance
+            double distance = R * c;
+            return distance;
+        }
+
+        private  double ToRadians(double degrees)
+        {
+            return degrees * Math.PI / 180.0;
         }
 
         [HttpGet("getAllPassengers")]
@@ -38,18 +71,23 @@ namespace WebApplication2.Controllers
             {
                 return NotFound("No passangers found");
             }
+            foreach (var passanger in passangers)
+            {
+                passanger.Rides = (await _RidesRepository.GetAllAsync()).Where(r=>r.PassangerEmail == passanger.Email).ToList();
+            }
             return Ok(passangers);
         }
 
-        [HttpGet("getPassengerByEmail")]
+        [HttpGet("getPassengerByEmail/{email}")]
         public async Task<IActionResult> GetPassengerByEmail(string email)
         {
             Passanger passanger = await _PassangerRepository.GetByEmailAsync(email);
-            if (passanger == null) { return NotFound("no passanger with this eamil found"); }
+            if (passanger == null) { return NotFound("no passanger with this email found"); }
+            passanger.Rides = (await _RidesRepository.GetAllAsync()).Where(r=>r.PassangerEmail == email).ToList();
             return Ok(passanger);
 
         }
-        [HttpDelete("deletePassenger")]
+        [HttpDelete("deletePassenger/{email}")]
         public async Task<IActionResult> DeletePassenger(String email)
         {
             Passanger checkPassenger = await _PassangerRepository.GetByEmailAsync(email);
@@ -141,11 +179,42 @@ namespace WebApplication2.Controllers
                 // Add cases for other fields as needed
                 default:
                     return BadRequest("Invalid field to update");
+                    
             }
 
             await _PassangerRepository.UpdateAsync(passenger);
             await _PassangerRepository.Save();
             return Ok(passenger);
+        }
+        [HttpPost("requestRide")]
+        public async Task<IActionResult> requestRide(RequestRideDto ride) {
+
+            double price = CalculateDistance(ride.Long1, ride.Lat1, ride.Long2, ride.Lat2) * 10;
+            Driver driver =  await _DriverRepository.GetByEmailAsync(ride.DriverEmail!);
+            if (await _PassangerRepository.GetByEmailAsync(ride.PassengerEmail!) == null || driver == null)
+            {
+                return NotFound("driver or passenger account not found");
+            }
+            if(driver.Availability == false)
+            {
+                return BadRequest("driver not found");
+            }
+            DateTime today = DateTime.Now;
+            string dateString = today.ToString("yyyy-MM-dd");
+            Rides rideCreated = new Rides()
+            {
+                Date = dateString,
+                DriverEmail = ride.DriverEmail,
+                PassangerEmail = ride.PassengerEmail,
+                Price = price,
+                Status = "pending",
+                From = ride.From,
+                To = ride.To,
+            };
+            await _RidesRepository.AddAsync(rideCreated);
+            await _RidesRepository.Save();
+            return Ok(rideCreated);
+           
         }
         
     }
