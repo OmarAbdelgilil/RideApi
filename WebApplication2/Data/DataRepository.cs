@@ -46,6 +46,7 @@ namespace WebApplication1.Data
                 table.Remove(entity);
             }
         }
+
             public async Task<bool> Save()
         {
             return await _db.SaveChangesAsync() > 0;

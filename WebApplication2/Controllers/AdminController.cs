@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Collections.ObjectModel;
 using WebApplication1.Data;
 using WebApplication2.Models;
 
@@ -93,7 +94,55 @@ namespace WebApplication2.Controllers
         [HttpGet("getAllRides")]
         public async Task<IActionResult> GetAllRides()
         {
-            return Ok(await _RidesRepository.GetAllAsync());
+            await _DriverRepository.GetAllAsync();
+            await _PassangerRepository.GetAllAsync();
+            ICollection<Rides> rides = (await _RidesRepository.GetAllAsync()).ToList();
+            foreach (var ride in rides)
+            {
+                ride.Passanger!.Rides = null;
+                ride.Driver!.Rides = null;
+            }
+            return Ok(rides);
+        }
+        [HttpGet("getAllDriver")]
+        public async Task<IActionResult> GetAllDriver()
+        {
+            await _PassangerRepository.GetAllAsync();
+            var drivers = (await _DriverRepository.GetAllAsync()).ToList();
+            if (drivers == null || drivers.Count == 0)
+            {
+                return NotFound("No drivers found");
+            }
+            await _RidesRepository.GetAllAsync();
+            foreach (Driver driver in drivers)
+            {
+                if (driver.Rides == null) continue;
+                foreach (Rides ride in driver.Rides!)
+                {
+                    ride.Passanger!.Rides = null;
+                }
+            }
+            return Ok(drivers);
+        }
+        [HttpGet("getAllPassengers")]
+        public async Task<IActionResult> GetAllPassengers()
+        {
+            await _DriverRepository.GetAllAsync();
+            var passangers = (await _PassangerRepository.GetAllAsync()).ToList();
+            if (passangers == null || !passangers.Any())
+            {
+                return NotFound("No passangers found");
+            }
+            await _RidesRepository.GetAllAsync();
+            foreach (Passanger passanger in passangers)
+            {
+                if (passanger.Rides == null) continue;
+                foreach (Rides ride in passanger.Rides)
+                {
+                    ride.Driver!.Rides = null;
+                }
+            }
+            return Ok(passangers);
         }
     }
 }

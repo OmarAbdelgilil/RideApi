@@ -12,32 +12,34 @@ namespace WebApplication2.Controllers
     {
         private readonly IDataRepository<Driver> _DriverRepository;
         private readonly IDataRepository<Credentials> _CredentialsRepository;
-
+        private readonly IDataRepository<Rides> _RidesRepository;
+        private readonly IDataRepository<Passanger> _PassangerRepository;
         public DriverController(
              IDataRepository<Driver> DriverRepository,
-        IDataRepository<Credentials> CredentialsRepository
+        IDataRepository<Credentials> CredentialsRepository,
+        IDataRepository<Rides> RidesRepository,
+        IDataRepository<Passanger> PassangerRepository
             )
         {
             _DriverRepository = DriverRepository;
             _CredentialsRepository = CredentialsRepository;
+            _PassangerRepository =  PassangerRepository;
+            _RidesRepository = RidesRepository;
         }
 
-        [HttpGet("getAllDriver")]
-        public async Task<IActionResult> GetAllDriver()
-        {
-            var driver = (await _DriverRepository.GetAllAsync()).ToList();
-            if (driver == null || driver.Count == 0)
-            {
-                return NotFound("No drivers found");
-            }
-            return Ok(driver);
-        }
+       
 
         [HttpGet("getDriverByEmail/{email}")]
         public async Task<IActionResult> GetDriverByEmail(string email)
         {
+            await _PassangerRepository.GetAllAsync();
             Driver driver= await _DriverRepository.GetByEmailAsync(email);
-            if (driver == null) { return NotFound("no passanger with this eamil found"); }
+            if (driver == null) { return NotFound("no passanger with this email found"); }
+            await _RidesRepository.GetAllAsync();
+            foreach (var ride in driver.Rides!)
+            {
+                ride.Passanger!.Rides = null;
+            }
             return Ok(driver);
 
         }
@@ -98,16 +100,16 @@ namespace WebApplication2.Controllers
         }
 
         [HttpPost("changePassword")]
-        public async Task<IActionResult> ChangePassword(String email, String old, String newPassword)
+        public async Task<IActionResult> ChangePassword(ChangePasswordDto data)
         {
-            Credentials? driver = await _CredentialsRepository.GetByEmailAsync(email);
+            Credentials? driver = await _CredentialsRepository.GetByEmailAsync(data.Email!);
             if (driver == null)
             {
                 return NotFound("No Drivers found");
             }
-            if (driver.Password == old)
+            if (driver.Password == data.OldPassword)
             {
-                driver.Password = newPassword;
+                driver.Password = data.NewPassword;
                 await _CredentialsRepository.UpdateAsync(driver);
                 await _CredentialsRepository.Save();
                 return Ok();
@@ -118,7 +120,7 @@ namespace WebApplication2.Controllers
             }
         }
 
-        [HttpPost("updateDriver")]
+        [HttpPatch("updateDriver")]
         public async Task<IActionResult> UpdateDriver(String email, String fieldToUpdate, String newValue)
         {
             Driver? driver = await _DriverRepository.GetByEmailAsync(email);
@@ -169,5 +171,100 @@ namespace WebApplication2.Controllers
             await _DriverRepository.Save();
             return Ok(driver);
         }
+        [HttpPatch("rejectRide")]
+        public async Task<IActionResult> RejectRide(String id)
+        {
+            Rides ride = await _RidesRepository.GetByEmailAsync(id);
+            if (ride == null) { return NotFound(); }
+            if (ride.Status == "done" || ride.Status == "paid" || ride.Status == "cancelled")
+            {
+                return BadRequest("Ride is already done");
+            }
+            if (ride.Status == "ongoing")
+            {
+                Driver driver = await _DriverRepository.GetByEmailAsync(ride.DriverEmail!);
+                driver.Availability = true;
+                await _DriverRepository.UpdateAsync(driver);
+                await _DriverRepository.Save();
+            }
+            ride.Status = "cancelled";
+            await _RidesRepository.UpdateAsync(ride);
+            await _RidesRepository.Save();
+            return Ok(ride);
+
+        }
+        [HttpPatch("acceptRide")]
+        public async Task<IActionResult> AcceptRide(string id)
+        {
+            Rides ride = await _RidesRepository.GetByEmailAsync(id);
+            if (ride == null) { return NotFound(); }
+            if (ride.Status == "done" || ride.Status == "paid" || ride.Status == "cancelled")
+            {
+                return BadRequest("Ride is already done");
+            }
+            ride.Status = "ongoing";
+            Driver driver = await _DriverRepository.GetByEmailAsync(ride.DriverEmail!);
+            driver.Availability = false;
+            await _DriverRepository.UpdateAsync(driver);
+            await _RidesRepository.UpdateAsync(ride);
+            await _DriverRepository.Save();
+            await _RidesRepository.Save();
+
+            return Ok(ride);
+        }
+        [HttpPatch("endRide")]
+        public async Task<IActionResult> EndRide(string id)
+        {
+            Rides ride = await _RidesRepository.GetByEmailAsync(id);
+            if (ride == null) { return NotFound(); }
+            if (ride.Status == "done" || ride.Status == "paid" || ride.Status == "cancelled")
+            {
+                return BadRequest("Ride is already done");
+            }
+            ride.Status = "done";
+            Driver driver = await _DriverRepository.GetByEmailAsync(ride.DriverEmail!);
+            driver.Availability = true;
+            await _DriverRepository.UpdateAsync(driver);
+            await _RidesRepository.UpdateAsync(ride);
+            await _DriverRepository.Save();
+            await _RidesRepository.Save();
+
+            return Ok(ride);
+        }
+        [HttpGet("getAllIncomePerDay/{email}")]
+        public async Task<IActionResult> GetAllIncomePerDay(string email)
+        {
+            ICollection<Rides> rides = (await _RidesRepository.GetAllAsync()).Where(r=>r.DriverEmail == email&&r.Status == "paid").ToList();
+            if(rides.Count == 0) {  return NotFound(); }
+            Dictionary<String, Double> incomeMap = new Dictionary<string, double>();
+            foreach (Rides ride in rides)
+            {
+                if(incomeMap.ContainsKey(ride.Date!)) {
+                    incomeMap[ride.Date!] += ride.Price;
+                }
+                else { incomeMap[ride.Date!] = ride.Price; }
+                
+            }
+            return Ok(incomeMap);
+        }
+        [HttpGet("getAllIncomePerMonth/{email}")]
+        public async Task<IActionResult> GetAllIncomePerMonth(string email)
+        {
+            ICollection<Rides> rides = (await _RidesRepository.GetAllAsync()).Where(r => r.DriverEmail == email && r.Status == "paid").ToList();
+            if (rides.Count == 0) { return NotFound(); }
+            Dictionary<String, Double> incomeMap = new Dictionary<string, double>();
+            foreach (Rides ride in rides)
+            {
+                var splitDate = ride.Date!.Split("-");
+                String month = splitDate[0]+'-'+splitDate[1];
+                if (incomeMap.ContainsKey(month))
+                {
+                    incomeMap[month] += ride.Price;
+                }
+                else { incomeMap[month] = ride.Price; }
+            }
+            return Ok(incomeMap);
+        }
+
     }
 }

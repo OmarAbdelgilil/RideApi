@@ -1,10 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.VisualBasic;
-using System.Collections.ObjectModel;
-using System.ComponentModel.DataAnnotations;
-using System.Runtime.CompilerServices;
-using System.Runtime.ConstrainedExecution;
+﻿using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Data;
 using WebApplication2.Dtos;
 using WebApplication2.Models;
@@ -58,32 +52,23 @@ namespace WebApplication2.Controllers
             return distance;
         }
 
-        private  double ToRadians(double degrees)
+        private double ToRadians(double degrees)
         {
             return degrees * Math.PI / 180.0;
         }
 
-        [HttpGet("getAllPassengers")]
-        public async Task<IActionResult> GetAllPassengers()
-        {
-            var passangers = (await _PassangerRepository.GetAllAsync()).ToList();
-            if (passangers == null || !passangers.Any())
-            {
-                return NotFound("No passangers found");
-            }
-            foreach (var passanger in passangers)
-            {
-                passanger.Rides = (await _RidesRepository.GetAllAsync()).Where(r=>r.PassangerEmail == passanger.Email).ToList();
-            }
-            return Ok(passangers);
-        }
+       
 
         [HttpGet("getPassengerByEmail/{email}")]
         public async Task<IActionResult> GetPassengerByEmail(string email)
         {
             Passanger passanger = await _PassangerRepository.GetByEmailAsync(email);
             if (passanger == null) { return NotFound("no passanger with this email found"); }
-            passanger.Rides = (await _RidesRepository.GetAllAsync()).Where(r=>r.PassangerEmail == email).ToList();
+            await _RidesRepository.GetAllAsync();
+            foreach (var ride in passanger.Rides!)
+            {
+                ride.Passanger!.Rides = null;
+            }
             return Ok(passanger);
 
         }
@@ -118,7 +103,7 @@ namespace WebApplication2.Controllers
                 Password = newPassanger.Password,
                 Role = newPassanger.Role
             };
-            if((await _CredentialsRepository.GetByEmailAsync(credentials.Email!)) != null)
+            if ((await _CredentialsRepository.GetByEmailAsync(credentials.Email!)) != null)
             {
                 return BadRequest("Email already exists");
             }
@@ -138,16 +123,16 @@ namespace WebApplication2.Controllers
             return Ok(passanger);
         }
         [HttpPost("changePassword")]
-        public async Task<IActionResult> ChangePassword(String email, String old, String newPassword)
+        public async Task<IActionResult> ChangePassword(ChangePasswordDto data)
         {
-            Credentials? passenger = await _CredentialsRepository.GetByEmailAsync(email);
+            Credentials? passenger = await _CredentialsRepository.GetByEmailAsync(data.Email!);
             if (passenger == null)
             {
                 return NotFound("No passangers found");
             }
-            if (passenger.Password == old)
+            if (passenger.Password == data.OldPassword)
             {
-                passenger.Password = newPassword;
+                passenger.Password = data.NewPassword;
                 await _CredentialsRepository.UpdateAsync(passenger);
                 await _CredentialsRepository.Save();
                 return Ok();
@@ -157,14 +142,15 @@ namespace WebApplication2.Controllers
                 return BadRequest("old password is wrong");
             }
         }
-        [HttpPost("updatePassenger")]
+        [HttpPatch("updatePassenger")]
         public async Task<IActionResult> UpdatePassenger(String email, String fieldToUpdate, String newValue)
         {
             Passanger? passenger = await _PassangerRepository.GetByEmailAsync(email);
             if (passenger == null)
             {
                 return NotFound("No passangers found");
-            } if (fieldToUpdate == "email")
+            }
+            if (fieldToUpdate == "email")
             {
                 return BadRequest("can't update the email");
             }
@@ -179,7 +165,7 @@ namespace WebApplication2.Controllers
                 // Add cases for other fields as needed
                 default:
                     return BadRequest("Invalid field to update");
-                    
+
             }
 
             await _PassangerRepository.UpdateAsync(passenger);
@@ -187,15 +173,16 @@ namespace WebApplication2.Controllers
             return Ok(passenger);
         }
         [HttpPost("requestRide")]
-        public async Task<IActionResult> requestRide(RequestRideDto ride) {
+        public async Task<IActionResult> RequestRide(RequestRideDto ride)
+        {
 
             double price = CalculateDistance(ride.Long1, ride.Lat1, ride.Long2, ride.Lat2) * 10;
-            Driver driver =  await _DriverRepository.GetByEmailAsync(ride.DriverEmail!);
+            Driver driver = await _DriverRepository.GetByEmailAsync(ride.DriverEmail!);
             if (await _PassangerRepository.GetByEmailAsync(ride.PassengerEmail!) == null || driver == null)
             {
                 return NotFound("driver or passenger account not found");
             }
-            if(driver.Availability == false)
+            if (driver.Availability == false)
             {
                 return BadRequest("driver not found");
             }
@@ -214,8 +201,65 @@ namespace WebApplication2.Controllers
             await _RidesRepository.AddAsync(rideCreated);
             await _RidesRepository.Save();
             return Ok(rideCreated);
-           
+
         }
-        
+        [HttpPatch("cancelRide")]
+        public async Task<IActionResult> CancelRide(String id)
+        {
+            Rides ride = await _RidesRepository.GetByEmailAsync(id);
+            if (ride == null) { return NotFound(); }
+            if (ride.Status == "done" || ride.Status == "paid" || ride.Status == "cancelled")
+            {
+                return BadRequest("Ride is already done");
+            }
+            if(ride.Status == "ongoing")
+            {
+                Driver driver = await _DriverRepository.GetByEmailAsync(ride.DriverEmail!);
+                driver.Availability = true;
+                await _DriverRepository.UpdateAsync(driver);
+                await _DriverRepository.Save();
+            }
+            ride.Status = "cancelled";
+            await _RidesRepository.UpdateAsync(ride);
+            await _RidesRepository.Save();
+            return Ok(ride);
+
+        }
+
+        [HttpPatch("payAndFeedback")]
+        public async Task<IActionResult> PayAndFeedback(String id, int rating , string? feedback) {
+            Rides ride = await _RidesRepository.GetByEmailAsync(id);
+            if (ride == null) { return NotFound(); }
+            if (ride.Status != "done")
+            {
+                return BadRequest("Something went wrong");
+            }
+            ride.Status = "paid";
+            if(rating!=0)
+            {
+                Driver driver = await _DriverRepository.GetByEmailAsync(ride.DriverEmail!);
+                if (driver == null) { return NotFound();}
+                if (driver.Rating != 0)
+                {
+                    driver.Rating = (driver.Rating + rating) / 2;
+                }
+                else
+                {
+                    driver.Rating = rating;
+                }
+                ride.Rate = rating;
+                await _DriverRepository.UpdateAsync(driver);
+                await _DriverRepository.Save();
+            }
+            if(feedback!=null)
+            {
+                ride.Feedback = feedback;
+            }
+            await _RidesRepository.UpdateAsync(ride);
+            await _DriverRepository.Save();
+            return Ok(ride);
+        }
+
+
     }
 }
