@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Data;
 using WebApplication2.Dtos;
 using WebApplication2.Models;
@@ -57,14 +58,15 @@ namespace WebApplication2.Controllers
             return degrees * Math.PI / 180.0;
         }
 
-       
 
+        [Authorize(Roles = "Passenger,Admin")]
         [HttpGet("getPassengerByEmail/{email}")]
         public async Task<IActionResult> GetPassengerByEmail(string email)
         {
             Passanger passanger = await _PassangerRepository.GetByEmailAsync(email);
             if (passanger == null) { return NotFound("no passanger with this email found"); }
             await _RidesRepository.GetAllAsync();
+            if(passanger.Rides == null) return Ok(passanger);
             foreach (var ride in passanger.Rides!)
             {
                 ride.Passanger!.Rides = null;
@@ -72,6 +74,7 @@ namespace WebApplication2.Controllers
             return Ok(passanger);
 
         }
+        //[Authorize(Roles = "Admin")]
         [HttpDelete("deletePassenger/{email}")]
         public async Task<IActionResult> DeletePassenger(String email)
         {
@@ -84,7 +87,7 @@ namespace WebApplication2.Controllers
             await _CredentialsRepository.Save();
             return Ok();
         }
-        [HttpPost("createPassenger")]
+        //[HttpPost("createPassenger")]
         public async Task<IActionResult> CreatePassenger(NewPassengerDto newPassanger)
         {
             if (!ModelState.IsValid)
@@ -122,6 +125,7 @@ namespace WebApplication2.Controllers
 
             return Ok(passanger);
         }
+        //[Authorize(Roles = "Passenger,Admin")]
         [HttpPost("changePassword")]
         public async Task<IActionResult> ChangePassword(ChangePasswordDto data)
         {
@@ -142,6 +146,7 @@ namespace WebApplication2.Controllers
                 return BadRequest("old password is wrong");
             }
         }
+        //[Authorize(Roles = "Passenger,Admin")]
         [HttpPatch("updatePassenger")]
         public async Task<IActionResult> UpdatePassenger(String email, String fieldToUpdate, String newValue)
         {
@@ -172,6 +177,7 @@ namespace WebApplication2.Controllers
             await _PassangerRepository.Save();
             return Ok(passenger);
         }
+
         [HttpPost("requestRide")]
         public async Task<IActionResult> RequestRide(RequestRideDto ride)
         {
@@ -225,7 +231,7 @@ namespace WebApplication2.Controllers
             return Ok(ride);
 
         }
-
+        //[Authorize(Roles = "Passenger")]
         [HttpPatch("payAndFeedback")]
         public async Task<IActionResult> PayAndFeedback(String id, int rating , string? feedback) {
             Rides ride = await _RidesRepository.GetByEmailAsync(id);

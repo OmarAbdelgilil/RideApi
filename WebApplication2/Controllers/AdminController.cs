@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System.Collections.ObjectModel;
 using WebApplication1.Data;
 using WebApplication2.Models;
@@ -15,6 +16,7 @@ namespace WebApplication2.Controllers
         private readonly IDataRepository<Rides> _RidesRepository;
         public AdminController(IDataRepository<Rides> RidesRepository,IDataRepository<Driver> DriverRepository, IDataRepository<Credentials> CredentialsRepository, IDataRepository<Passanger> PassangerRepository) { _CredentialsRepository = CredentialsRepository; _PassangerRepository = PassangerRepository; _DriverRepository = DriverRepository;  _RidesRepository = RidesRepository; }
 
+        //[Authorize(Roles = "Admin")]
         [HttpGet("getallPending")]
         public async Task<IActionResult> GetAllPending()
         {
@@ -45,7 +47,7 @@ namespace WebApplication2.Controllers
             }
             return Ok(UsersPending);
         }
-
+        //[Authorize(Roles = "Admin")]
         [HttpPost("acceptAccount")]
         public async Task<IActionResult> AcceptAccount(String email)
         {
@@ -58,6 +60,7 @@ namespace WebApplication2.Controllers
             await _CredentialsRepository.Save();
             return Ok();
         }
+        //[Authorize(Roles = "Admin")]
         [HttpPost("rejectAccount")]
         public async Task<IActionResult> RejectAccount(String email)
         {
@@ -70,6 +73,7 @@ namespace WebApplication2.Controllers
             await _CredentialsRepository.Save();
             return Ok();
         }
+        //[Authorize(Roles = "Admin")]
         [HttpPost("blockDriver")]
         public async Task<IActionResult> BlockDriver(String email)
         {
@@ -81,6 +85,7 @@ namespace WebApplication2.Controllers
             await _DriverRepository.Save();
             return Ok();
         }
+        //[Authorize(Roles = "Admin")]
         [HttpPost("unBlockDriver")]
         public async Task<IActionResult> UnBlockDriver(String email)
         {
@@ -91,6 +96,7 @@ namespace WebApplication2.Controllers
             await _DriverRepository.Save();
             return Ok();
         }
+       // [Authorize(Roles = "Admin")]
         [HttpGet("getAllRides")]
         public async Task<IActionResult> GetAllRides()
         {
@@ -104,6 +110,7 @@ namespace WebApplication2.Controllers
             }
             return Ok(rides);
         }
+        //[Authorize(Roles = "Admin")]
         [HttpGet("getAllDriver")]
         public async Task<IActionResult> GetAllDriver()
         {
@@ -124,6 +131,7 @@ namespace WebApplication2.Controllers
             }
             return Ok(drivers);
         }
+       // [Authorize(Roles = "Admin")]
         [HttpGet("getAllPassengers")]
         public async Task<IActionResult> GetAllPassengers()
         {

@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Net;
 using System.Reflection.Metadata;
 using System.Security.Cryptography;
 using WebApplication1.Data;
+using WebApplication2.Auth;
 using WebApplication2.Dtos;
 using WebApplication2.Models;
 
@@ -14,17 +16,18 @@ namespace WebApplication2.Controllers
         private readonly IDataRepository<Passanger> _PassangerRepository;
         private readonly IDataRepository<Credentials> _CredentialsRepository;
         private readonly IDataRepository<Driver> _DriverRepository;
-
-
+        private readonly AuthInterface _auth;
         public CredentialsController(
              IDataRepository<Passanger> PassangerRepository,
              IDataRepository<Credentials> CredentialsRepository,
-             IDataRepository<Driver> DriverRepository
+             IDataRepository<Driver> DriverRepository,
+            AuthInterface auth
             )
         {
             _PassangerRepository = PassangerRepository;
             _CredentialsRepository = CredentialsRepository;
             _DriverRepository = DriverRepository;
+            _auth = auth;
 
         }
         [HttpPost("login")]
@@ -44,6 +47,7 @@ namespace WebApplication2.Controllers
                 return NotFound("Email or password are in correct");
             }
 
+            String token = _auth.LoginGetToken(login.Email!, login.Password!, c.Role!);
             if (c.Role == "Passenger")
             {
                 if (c.Registered == 1)
@@ -62,7 +66,7 @@ namespace WebApplication2.Controllers
                 Dictionary<string, dynamic> map = new Dictionary<string, dynamic>();
                 map.Add("role",c.Role);
                 map.Add("data",passanger);
-                return Ok(map);
+                return Ok(new {Token = token });
             }
             if (c.Role == "Driver")
             {
@@ -86,12 +90,12 @@ namespace WebApplication2.Controllers
                 Dictionary<string, dynamic> map = new Dictionary<string, dynamic>();
                 map.Add("role", c.Role);
                 map.Add("data", driver);
-                return Ok(map);
+                return Ok(new { Token = token });
             }
             if(c.Role == "Admin")
             {
                 Admin admin = new Admin() { Email = login.Email };
-                return Ok(admin);
+                return Ok(new { Token = token });
             }
 
             return BadRequest();

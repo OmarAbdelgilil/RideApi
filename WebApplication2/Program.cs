@@ -1,6 +1,10 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using System.Text.Json.Serialization;
 using WebApplication1.Data;
+using WebApplication2.Auth;
 using WebApplication2.Models;
 
 
@@ -14,6 +18,20 @@ builder.Services.AddCors(options =>
                           .AllowAnyMethod()
                           .AllowAnyHeader());
 });
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["SecretKey:key"]!))
+        };
+    });
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -26,6 +44,7 @@ builder.Services.AddScoped<IDataRepository<Passanger>, DataRepository<Passanger>
 builder.Services.AddScoped<IDataRepository<Driver>, DataRepository<Driver>>();
 builder.Services.AddScoped<IDataRepository<Credentials>, DataRepository<Credentials>>();
 builder.Services.AddScoped<IDataRepository<Rides>, DataRepository<Rides>>();
+builder.Services.AddScoped<AuthInterface, Auth>();
 builder.Services.AddControllersWithViews().AddJsonOptions(options => options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 var app = builder.Build();
 
@@ -38,7 +57,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
+
+
 
 app.MapControllers();
 app.UseCors("AllowOrigin");

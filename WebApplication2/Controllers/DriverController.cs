@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Data;
 using WebApplication2.Dtos;
@@ -27,8 +28,8 @@ namespace WebApplication2.Controllers
             _RidesRepository = RidesRepository;
         }
 
-       
 
+        //[Authorize(Roles = "Driver,Admin")]
         [HttpGet("getDriverByEmail/{email}")]
         public async Task<IActionResult> GetDriverByEmail(string email)
         {
@@ -36,6 +37,7 @@ namespace WebApplication2.Controllers
             Driver driver= await _DriverRepository.GetByEmailAsync(email);
             if (driver == null) { return NotFound("no passanger with this email found"); }
             await _RidesRepository.GetAllAsync();
+            if(driver.Rides == null)   return Ok(driver);
             foreach (var ride in driver.Rides!)
             {
                 ride.Passanger!.Rides = null;
@@ -43,6 +45,7 @@ namespace WebApplication2.Controllers
             return Ok(driver);
 
         }
+        //[Authorize(Roles = "Admin")]
         [HttpDelete("deleteDriver/{email}")]
         public async Task<IActionResult> DeleteDriver(String email)
         {
@@ -98,7 +101,7 @@ namespace WebApplication2.Controllers
 
             return Ok(driver);
         }
-
+        //[Authorize(Roles = "Driver,Admin")]
         [HttpPost("changePassword")]
         public async Task<IActionResult> ChangePassword(ChangePasswordDto data)
         {
@@ -119,7 +122,7 @@ namespace WebApplication2.Controllers
                 return BadRequest("old password is wrong");
             }
         }
-
+        //[Authorize(Roles = "Driver,Admin")]
         [HttpPatch("updateDriver")]
         public async Task<IActionResult> UpdateDriver(String email, String fieldToUpdate, String newValue)
         {
@@ -171,6 +174,7 @@ namespace WebApplication2.Controllers
             await _DriverRepository.Save();
             return Ok(driver);
         }
+        //[Authorize(Roles = "Driver,Admin")]
         [HttpPatch("rejectRide")]
         public async Task<IActionResult> RejectRide(String id)
         {
@@ -193,6 +197,7 @@ namespace WebApplication2.Controllers
             return Ok(ride);
 
         }
+        //[Authorize(Roles = "Driver,Admin")]
         [HttpPatch("acceptRide")]
         public async Task<IActionResult> AcceptRide(string id)
         {
@@ -212,6 +217,7 @@ namespace WebApplication2.Controllers
 
             return Ok(ride);
         }
+       // [Authorize(Roles = "Driver,Admin")]
         [HttpPatch("endRide")]
         public async Task<IActionResult> EndRide(string id)
         {
@@ -231,6 +237,7 @@ namespace WebApplication2.Controllers
 
             return Ok(ride);
         }
+        //[Authorize(Roles = "Driver,Admin")]
         [HttpGet("getAllIncomePerDay/{email}")]
         public async Task<IActionResult> GetAllIncomePerDay(string email)
         {
@@ -247,6 +254,7 @@ namespace WebApplication2.Controllers
             }
             return Ok(incomeMap);
         }
+        //[Authorize(Roles = "Driver,Admin")]
         [HttpGet("getAllIncomePerMonth/{email}")]
         public async Task<IActionResult> GetAllIncomePerMonth(string email)
         {
