@@ -3,5 +3,7 @@
     public interface AuthInterface
     {
         String LoginGetToken(string email, string password, String role);
+
+
     }
 }
