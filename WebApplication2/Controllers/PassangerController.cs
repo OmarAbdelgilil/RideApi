@@ -87,7 +87,7 @@ namespace WebApplication2.Controllers
             await _CredentialsRepository.Save();
             return Ok();
         }
-        //[HttpPost("createPassenger")]
+        [HttpPost("createPassenger")]
         public async Task<IActionResult> CreatePassenger(NewPassengerDto newPassanger)
         {
             if (!ModelState.IsValid)
