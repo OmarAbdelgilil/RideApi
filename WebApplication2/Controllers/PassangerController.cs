@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Data;
 using WebApplication2.Dtos;
+using WebApplication2.Migrations;
 using WebApplication2.Models;
 
 namespace WebApplication2.Controllers
@@ -177,7 +178,11 @@ namespace WebApplication2.Controllers
             await _PassangerRepository.Save();
             return Ok(passenger);
         }
-
+        [HttpPost("tripPrice")]
+        public  IActionResult TripPrice(PriceDto directions)
+        {
+            return Ok(CalculateDistance(directions.Long1, directions.Lat1, directions.Long2, directions.Lat2) * 10);
+        }
         [HttpPost("requestRide")]
         public async Task<IActionResult> RequestRide(RequestRideDto ride)
         {
@@ -209,6 +214,7 @@ namespace WebApplication2.Controllers
             return Ok(rideCreated);
 
         }
+
         [HttpPatch("cancelRide")]
         public async Task<IActionResult> CancelRide(String id)
         {
@@ -264,6 +270,14 @@ namespace WebApplication2.Controllers
             await _RidesRepository.UpdateAsync(ride);
             await _DriverRepository.Save();
             return Ok(ride);
+        }
+
+        [HttpGet("/getCities")]
+        public IActionResult GetCities()
+        {
+            return Ok(
+                MapData.GetMap()
+                );
         }
 
 
