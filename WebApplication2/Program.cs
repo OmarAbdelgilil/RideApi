@@ -6,18 +6,21 @@ using System.Text.Json.Serialization;
 using WebApplication1.Data;
 using WebApplication2.Auth;
 using WebApplication2.Models;
+using WebApplication2.RealTime;
 
 
 var builder = WebApplication.CreateBuilder(args);
+
 
 // Add services to the container.
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowOrigin",
-        builder => builder.AllowAnyOrigin()
+        builder => builder.WithOrigins("http://localhost:3000")
                           .AllowAnyMethod()
-                          .AllowAnyHeader());
+                          .AllowAnyHeader().AllowCredentials());
 });
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -46,6 +49,7 @@ builder.Services.AddScoped<IDataRepository<Credentials>, DataRepository<Credenti
 builder.Services.AddScoped<IDataRepository<Rides>, DataRepository<Rides>>();
 builder.Services.AddScoped<AuthInterface, Auth>();
 builder.Services.AddControllersWithViews().AddJsonOptions(options => options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
+builder.Services.AddSignalR();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -57,6 +61,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -64,4 +69,5 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.UseCors("AllowOrigin");
+app.MapHub<SignalRHub>("/realTime");
 app.Run();

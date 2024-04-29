@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using System.Collections.ObjectModel;
 using WebApplication1.Data;
 using WebApplication2.Models;
+using WebApplication2.RealTime;
 
 namespace WebApplication2.Controllers
 {
@@ -14,7 +16,8 @@ namespace WebApplication2.Controllers
         private readonly IDataRepository<Passanger> _PassangerRepository;
         private readonly IDataRepository<Driver> _DriverRepository;
         private readonly IDataRepository<Rides> _RidesRepository;
-        public AdminController(IDataRepository<Rides> RidesRepository,IDataRepository<Driver> DriverRepository, IDataRepository<Credentials> CredentialsRepository, IDataRepository<Passanger> PassangerRepository) { _CredentialsRepository = CredentialsRepository; _PassangerRepository = PassangerRepository; _DriverRepository = DriverRepository;  _RidesRepository = RidesRepository; }
+        private readonly IHubContext<SignalRHub> _HubContext;
+        public AdminController(IDataRepository<Rides> RidesRepository,IDataRepository<Driver> DriverRepository, IDataRepository<Credentials> CredentialsRepository, IDataRepository<Passanger> PassangerRepository,IHubContext<SignalRHub> hubContext) { _CredentialsRepository = CredentialsRepository; _PassangerRepository = PassangerRepository; _DriverRepository = DriverRepository;  _RidesRepository = RidesRepository; _HubContext = hubContext; }
 
         //[Authorize(Roles = "Admin")]
         [HttpGet("getallPending")]
@@ -129,6 +132,7 @@ namespace WebApplication2.Controllers
                     ride.Passanger!.Rides = null;
                 }
             }
+            
             return Ok(drivers);
         }
        // [Authorize(Roles = "Admin")]

@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using WebApplication1.Data;
 using WebApplication2.Dtos;
 using WebApplication2.Migrations;
 using WebApplication2.Models;
+using WebApplication2.RealTime;
 
 namespace WebApplication2.Controllers
 {
@@ -16,18 +18,22 @@ namespace WebApplication2.Controllers
         private readonly IDataRepository<Credentials> _CredentialsRepository;
         private readonly IDataRepository<Driver> _DriverRepository;
         private readonly IDataRepository<Rides> _RidesRepository;
+        private readonly IHubContext<SignalRHub> _HubContext;
 
         public PassangerController(
              IDataRepository<Passanger> PassangerRepository,
         IDataRepository<Credentials> CredentialsRepository,
         IDataRepository<Driver> DriverRepository,
-        IDataRepository<Rides> RidesRepository
+        IDataRepository<Rides> RidesRepository,
+        IHubContext<SignalRHub> HubContext
             )
         {
             _PassangerRepository = PassangerRepository;
             _CredentialsRepository = CredentialsRepository;
             _DriverRepository = DriverRepository;
             _RidesRepository = RidesRepository;
+            _HubContext = HubContext;
+
 
         }
 
@@ -117,12 +123,14 @@ namespace WebApplication2.Controllers
                 UserName = newPassanger.UserName,
                 Gender = newPassanger.Gender,
             };
-
+            Dictionary<string, dynamic> toSend = new Dictionary<string, dynamic>();
+            toSend.Add("role", "Passenger");
+            toSend.Add("data", passanger);
             await _CredentialsRepository.AddAsync(credentials);
             await _CredentialsRepository.Save();
             await _PassangerRepository.AddAsync(passanger);
             await _PassangerRepository.Save();
-
+            await _HubContext.Clients.All.SendAsync("UpdatePending", toSend);
 
             return Ok(passanger);
         }
