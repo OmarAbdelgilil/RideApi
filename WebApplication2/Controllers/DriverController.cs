@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Data;
+using WebApplication2.Auth;
 using WebApplication2.Dtos;
 using WebApplication2.Models;
 
@@ -12,20 +13,23 @@ namespace WebApplication2.Controllers
     public class DriverController : Controller
     {
         private readonly IDataRepository<Driver> _DriverRepository;
-        private readonly IDataRepository<Credentials> _CredentialsRepository;
         private readonly IDataRepository<Rides> _RidesRepository;
         private readonly IDataRepository<Passanger> _PassangerRepository;
+        private readonly IDataRepository<Credentials> _CredentialsRepository;
+        private readonly AuthInterface _auth;
         public DriverController(
              IDataRepository<Driver> DriverRepository,
-        IDataRepository<Credentials> CredentialsRepository,
         IDataRepository<Rides> RidesRepository,
-        IDataRepository<Passanger> PassangerRepository
+        IDataRepository<Passanger> PassangerRepository,
+        IDataRepository<Credentials> CredentialsRepository,
+        AuthInterface auth
             )
         {
             _DriverRepository = DriverRepository;
-            _CredentialsRepository = CredentialsRepository;
+            _auth = auth;
             _PassangerRepository =  PassangerRepository;
             _RidesRepository = RidesRepository;
+            _CredentialsRepository = CredentialsRepository;
         }
 
 
@@ -72,13 +76,7 @@ namespace WebApplication2.Controllers
             }
 
 
-            Credentials credentials = new Credentials()
-            {
-                Email = newDriver.Email,
-                Password = newDriver.Password,
-                Role = newDriver.Role
-            };
-            if ((await _CredentialsRepository.GetByEmailAsync(credentials.Email!)) != null)
+            if (!await (_auth.Register(newDriver.Email!, newDriver.Password!, newDriver.Role)))
             {
                 return BadRequest("Email already exists");
             }
@@ -92,16 +90,13 @@ namespace WebApplication2.Controllers
                 Smoking = newDriver.Smoking,
                 Username = newDriver.Username
             };
-
-            await _CredentialsRepository.AddAsync(credentials);
-            await _CredentialsRepository.Save();
             await _DriverRepository.AddAsync(driver);
             await _DriverRepository.Save();
 
 
             return Ok(driver);
         }
-        //[Authorize(Roles = "Driver,Admin")]
+      /*  //[Authorize(Roles = "Driver,Admin")]
         [HttpPost("changePassword")]
         public async Task<IActionResult> ChangePassword(ChangePasswordDto data)
         {
@@ -122,6 +117,7 @@ namespace WebApplication2.Controllers
                 return BadRequest("old password is wrong");
             }
         }
+      */
         //[Authorize(Roles = "Driver,Admin")]
         [HttpPatch("updateDriver")]
         public async Task<IActionResult> UpdateDriver(String email, String fieldToUpdate, String newValue)

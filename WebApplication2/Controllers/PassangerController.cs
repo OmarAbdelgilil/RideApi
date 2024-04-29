@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using WebApplication1.Data;
+using WebApplication2.Auth;
 using WebApplication2.Dtos;
 using WebApplication2.Migrations;
 using WebApplication2.Models;
@@ -15,24 +16,28 @@ namespace WebApplication2.Controllers
     {
 
         private readonly IDataRepository<Passanger> _PassangerRepository;
-        private readonly IDataRepository<Credentials> _CredentialsRepository;
         private readonly IDataRepository<Driver> _DriverRepository;
         private readonly IDataRepository<Rides> _RidesRepository;
         private readonly IHubContext<SignalRHub> _HubContext;
+        private readonly IDataRepository<Credentials> _CredentialsRepository;
+        private readonly AuthInterface _auth;
 
         public PassangerController(
              IDataRepository<Passanger> PassangerRepository,
         IDataRepository<Credentials> CredentialsRepository,
         IDataRepository<Driver> DriverRepository,
         IDataRepository<Rides> RidesRepository,
-        IHubContext<SignalRHub> HubContext
+        IHubContext<SignalRHub> HubContext,
+        IDataRepository<Credentials> Credentials,
+        AuthInterface auth
             )
         {
             _PassangerRepository = PassangerRepository;
-            _CredentialsRepository = CredentialsRepository;
+            _auth = auth;
             _DriverRepository = DriverRepository;
             _RidesRepository = RidesRepository;
             _HubContext = HubContext;
+            _CredentialsRepository = CredentialsRepository;
 
 
         }
@@ -97,26 +102,20 @@ namespace WebApplication2.Controllers
         [HttpPost("createPassenger")]
         public async Task<IActionResult> CreatePassenger(NewPassengerDto newPassanger)
         {
+            
             if (!ModelState.IsValid)
             {
                 return BadRequest();
             }
+
             if (newPassanger.Password != newPassanger.ConfirmPassword)
             {
                 return BadRequest("Password doesn't match");
             }
-
-
-            Credentials credentials = new Credentials()
-            {
-                Email = newPassanger.Email,
-                Password = newPassanger.Password,
-                Role = newPassanger.Role
-            };
-            if ((await _CredentialsRepository.GetByEmailAsync(credentials.Email!)) != null)
-            {
+            if(!await (_auth.Register(newPassanger.Email!,newPassanger.Password!,newPassanger.Role)))
+                {
                 return BadRequest("Email already exists");
-            }
+            } 
             Passanger passanger = new Passanger()
             {
                 Email = newPassanger.Email,
@@ -126,35 +125,13 @@ namespace WebApplication2.Controllers
             Dictionary<string, dynamic> toSend = new Dictionary<string, dynamic>();
             toSend.Add("role", "Passenger");
             toSend.Add("data", passanger);
-            await _CredentialsRepository.AddAsync(credentials);
-            await _CredentialsRepository.Save();
             await _PassangerRepository.AddAsync(passanger);
             await _PassangerRepository.Save();
             await _HubContext.Clients.All.SendAsync("UpdatePending", toSend);
 
             return Ok(passanger);
         }
-        //[Authorize(Roles = "Passenger,Admin")]
-        [HttpPost("changePassword")]
-        public async Task<IActionResult> ChangePassword(ChangePasswordDto data)
-        {
-            Credentials? passenger = await _CredentialsRepository.GetByEmailAsync(data.Email!);
-            if (passenger == null)
-            {
-                return NotFound("No passangers found");
-            }
-            if (passenger.Password == data.OldPassword)
-            {
-                passenger.Password = data.NewPassword;
-                await _CredentialsRepository.UpdateAsync(passenger);
-                await _CredentialsRepository.Save();
-                return Ok();
-            }
-            else
-            {
-                return BadRequest("old password is wrong");
-            }
-        }
+   
         //[Authorize(Roles = "Passenger,Admin")]
         [HttpPatch("updatePassenger")]
         public async Task<IActionResult> UpdatePassenger(String email, String fieldToUpdate, String newValue)

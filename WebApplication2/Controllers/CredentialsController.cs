@@ -37,12 +37,10 @@ namespace WebApplication2.Controllers
             {
                 return BadRequest(ModelState);
             }
-
             Credentials c =await  _CredentialsRepository.GetByEmailAsync(login.Email!);
-
             if(c == null) { return NotFound("Email or password are in correct"); }
 
-            if(login.Password != c.Password)
+            if(!_auth.VerifyPasswordHash(login.Password!,c.PasswordHash!,c.PasswordSalt!))
             {
                 return NotFound("Email or password are in correct");
             }
