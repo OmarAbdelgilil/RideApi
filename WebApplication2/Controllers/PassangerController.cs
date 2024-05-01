@@ -71,17 +71,18 @@ namespace WebApplication2.Controllers
         }
 
 
-        [Authorize(Roles = "Passenger,Admin")]
+        //[Authorize(Roles = "Passenger,Admin")]
         [HttpGet("getPassengerByEmail/{email}")]
         public async Task<IActionResult> GetPassengerByEmail(string email)
         {
             Passanger passanger = await _PassangerRepository.GetByEmailAsync(email);
+            await _DriverRepository.GetAllAsync();
             if (passanger == null) { return NotFound("no passanger with this email found"); }
             await _RidesRepository.GetAllAsync();
             if(passanger.Rides == null) return Ok(passanger);
             foreach (var ride in passanger.Rides!)
             {
-                ride.Passanger!.Rides = null;
+                ride.Driver!.Rides = null;
             }
             return Ok(passanger);
 
