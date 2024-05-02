@@ -1,10 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using WebApplication1.Data;
+using WebApplication1.Helpers;
 using WebApplication2.Auth;
 using WebApplication2.Dtos;
 using WebApplication2.Models;
+using WebApplication2.RealTime;
 
 namespace WebApplication2.Controllers
 {
@@ -16,12 +19,14 @@ namespace WebApplication2.Controllers
         private readonly IDataRepository<Rides> _RidesRepository;
         private readonly IDataRepository<Passanger> _PassangerRepository;
         private readonly IDataRepository<Credentials> _CredentialsRepository;
+        private readonly IHubContext<SignalRHub> _HubContext;
         private readonly AuthInterface _auth;
         public DriverController(
              IDataRepository<Driver> DriverRepository,
         IDataRepository<Rides> RidesRepository,
         IDataRepository<Passanger> PassangerRepository,
         IDataRepository<Credentials> CredentialsRepository,
+        IHubContext<SignalRHub> HubContext,
         AuthInterface auth
             )
         {
@@ -29,6 +34,7 @@ namespace WebApplication2.Controllers
             _auth = auth;
             _PassangerRepository =  PassangerRepository;
             _RidesRepository = RidesRepository;
+            _HubContext = HubContext;
             _CredentialsRepository = CredentialsRepository;
         }
 
@@ -64,7 +70,7 @@ namespace WebApplication2.Controllers
         }
 
         [HttpPost("createDriver")]
-        public async Task<IActionResult> CreateDriver(NewDriverDto newDriver)
+        public async Task<IActionResult> CreateDriver([FromForm] NewDriverDto newDriver)
         {
             if (!ModelState.IsValid)
             {
@@ -80,6 +86,19 @@ namespace WebApplication2.Controllers
             {
                 return BadRequest("Email already exists");
             }
+            String fileName = "";
+            if (newDriver.File != null)
+            {
+                var result = UploadHandler.Upload(newDriver.File, "drivers");
+                if (!string.IsNullOrEmpty(result.ErrorMessage))
+                {
+                    return BadRequest(new
+                    {
+                        message = result.ErrorMessage
+                    });
+                }
+                fileName = result.FileName;
+            }
             Driver driver = new Driver()
             {
                 Email = newDriver.Email,
@@ -88,12 +107,15 @@ namespace WebApplication2.Controllers
                 City = newDriver.City,
                 Region = newDriver.Region,
                 Smoking = newDriver.Smoking,
-                Username = newDriver.Username
+                Username = newDriver.Username,
+                ImagePath = fileName,
             };
             await _DriverRepository.AddAsync(driver);
             await _DriverRepository.Save();
-
-
+            Dictionary<string, dynamic> toSend = new Dictionary<string, dynamic>();
+            toSend.Add("role", "Driver");
+            toSend.Add("data", driver);
+            await _HubContext.Clients.All.SendAsync("UpdatePending", toSend);
             return Ok(driver);
         }
       /*  //[Authorize(Roles = "Driver,Admin")]
@@ -168,6 +190,7 @@ namespace WebApplication2.Controllers
 
             await _DriverRepository.UpdateAsync(driver);
             await _DriverRepository.Save();
+            await _HubContext.Clients.All.SendAsync("driversUpdated", "");
             return Ok(driver);
         }
         //[Authorize(Roles = "Driver,Admin")]
@@ -190,6 +213,11 @@ namespace WebApplication2.Controllers
             ride.Status = "cancelled";
             await _RidesRepository.UpdateAsync(ride);
             await _RidesRepository.Save();
+            Dictionary<String, dynamic> data = new Dictionary<String, dynamic>();
+            data.Add("type", "rideUpdated");
+            data.Add("data", ride);
+            await _HubContext.Clients.All.SendAsync(ride.PassangerEmail!, data);
+            await _HubContext.Clients.All.SendAsync("ridesUpdated", data);
             return Ok(ride);
 
         }
@@ -210,7 +238,11 @@ namespace WebApplication2.Controllers
             await _RidesRepository.UpdateAsync(ride);
             await _DriverRepository.Save();
             await _RidesRepository.Save();
-
+            Dictionary<String, dynamic> data = new Dictionary<String, dynamic>();
+            data.Add("type", "rideUpdated");
+            data.Add("data", ride);
+            await _HubContext.Clients.All.SendAsync(ride.PassangerEmail!, data);
+            await _HubContext.Clients.All.SendAsync("ridesUpdated", data);
             return Ok(ride);
         }
        // [Authorize(Roles = "Driver,Admin")]
@@ -230,7 +262,11 @@ namespace WebApplication2.Controllers
             await _RidesRepository.UpdateAsync(ride);
             await _DriverRepository.Save();
             await _RidesRepository.Save();
-
+            Dictionary<String, dynamic> data = new Dictionary<String, dynamic>();
+            data.Add("type", "rideUpdated");
+            data.Add("data", ride);
+            await _HubContext.Clients.All.SendAsync(ride.PassangerEmail!, data);
+            await _HubContext.Clients.All.SendAsync("ridesUpdated", data);
             return Ok(ride);
         }
         //[Authorize(Roles = "Driver,Admin")]

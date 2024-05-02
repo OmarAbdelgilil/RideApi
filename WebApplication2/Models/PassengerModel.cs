@@ -19,7 +19,8 @@ namespace WebApplication2.Models
         [Required]
         public int Gender { get; set; }
 
-    
+        [FileExtensions(Extensions = "jpg,jpeg,png")]
+        [DataType(DataType.ImageUrl)]
         public  ICollection<Rides>? Rides { get; set; }
 
 
