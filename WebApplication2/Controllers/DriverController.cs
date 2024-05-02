@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -21,13 +22,15 @@ namespace WebApplication2.Controllers
         private readonly IDataRepository<Credentials> _CredentialsRepository;
         private readonly IHubContext<SignalRHub> _HubContext;
         private readonly AuthInterface _auth;
+        private readonly IMapper _mapper;
         public DriverController(
              IDataRepository<Driver> DriverRepository,
         IDataRepository<Rides> RidesRepository,
         IDataRepository<Passanger> PassangerRepository,
         IDataRepository<Credentials> CredentialsRepository,
         IHubContext<SignalRHub> HubContext,
-        AuthInterface auth
+        AuthInterface auth,
+        IMapper mapper
             )
         {
             _DriverRepository = DriverRepository;
@@ -36,6 +39,7 @@ namespace WebApplication2.Controllers
             _RidesRepository = RidesRepository;
             _HubContext = HubContext;
             _CredentialsRepository = CredentialsRepository;
+            _mapper = mapper;
         }
 
 
@@ -86,6 +90,7 @@ namespace WebApplication2.Controllers
             {
                 return BadRequest("Email already exists");
             }
+
             String fileName = "";
             if (newDriver.File != null)
             {
@@ -99,17 +104,7 @@ namespace WebApplication2.Controllers
                 }
                 fileName = result.FileName;
             }
-            Driver driver = new Driver()
-            {
-                Email = newDriver.Email,
-                Gender = newDriver.Gender,
-                CarType = newDriver.CarType,
-                City = newDriver.City,
-                Region = newDriver.Region,
-                Smoking = newDriver.Smoking,
-                Username = newDriver.Username,
-                ImagePath = fileName,
-            };
+            Driver driver = _mapper.Map<Driver>(newDriver);
             await _DriverRepository.AddAsync(driver);
             await _DriverRepository.Save();
             Dictionary<string, dynamic> toSend = new Dictionary<string, dynamic>();

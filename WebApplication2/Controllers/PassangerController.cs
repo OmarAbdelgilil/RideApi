@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using WebApplication1.Data;
@@ -21,6 +22,7 @@ namespace WebApplication2.Controllers
         private readonly IHubContext<SignalRHub> _HubContext;
         private readonly IDataRepository<Credentials> _CredentialsRepository;
         private readonly AuthInterface _auth;
+        private readonly IMapper _mapper;
 
         public PassangerController(
              IDataRepository<Passanger> PassangerRepository,
@@ -29,7 +31,8 @@ namespace WebApplication2.Controllers
         IDataRepository<Rides> RidesRepository,
         IHubContext<SignalRHub> HubContext,
         IDataRepository<Credentials> Credentials,
-        AuthInterface auth
+        AuthInterface auth,
+        IMapper mapper
             )
         {
             _PassangerRepository = PassangerRepository;
@@ -38,6 +41,7 @@ namespace WebApplication2.Controllers
             _RidesRepository = RidesRepository;
             _HubContext = HubContext;
             _CredentialsRepository = CredentialsRepository;
+            _mapper = mapper;
 
 
         }
@@ -71,17 +75,18 @@ namespace WebApplication2.Controllers
         }
 
 
-        [Authorize(Roles = "Passenger,Admin")]
+        //[Authorize(Roles = "Passenger,Admin")]
         [HttpGet("getPassengerByEmail/{email}")]
         public async Task<IActionResult> GetPassengerByEmail(string email)
         {
             Passanger passanger = await _PassangerRepository.GetByEmailAsync(email);
+            await _DriverRepository.GetAllAsync();
             if (passanger == null) { return NotFound("no passanger with this email found"); }
             await _RidesRepository.GetAllAsync();
             if(passanger.Rides == null) return Ok(passanger);
             foreach (var ride in passanger.Rides!)
             {
-                ride.Passanger!.Rides = null;
+                ride.Driver!.Rides = null;
             }
             return Ok(passanger);
 
@@ -115,13 +120,8 @@ namespace WebApplication2.Controllers
             if(!await (_auth.Register(newPassanger.Email!,newPassanger.Password!,newPassanger.Role)))
                 {
                 return BadRequest("Email already exists");
-            } 
-            Passanger passanger = new Passanger()
-            {
-                Email = newPassanger.Email,
-                UserName = newPassanger.UserName,
-                Gender = newPassanger.Gender,
-            };
+            }
+            Passanger passanger = _mapper.Map<Passanger>(newPassanger);
             Dictionary<string, dynamic> toSend = new Dictionary<string, dynamic>();
             toSend.Add("role", "Passenger");
             toSend.Add("data", passanger);
@@ -174,7 +174,7 @@ namespace WebApplication2.Controllers
 
             double price = CalculateDistance(ride.Long1, ride.Lat1, ride.Long2, ride.Lat2) * 10;
             Driver driver = await _DriverRepository.GetByEmailAsync(ride.DriverEmail!);
-            if (await _PassangerRepository.GetByEmailAsync(ride.PassengerEmail!) == null || driver == null)
+            if (await _PassangerRepository.GetByEmailAsync(ride.PassangerEmail!) == null || driver == null)
             {
                 return NotFound("driver or passenger account not found");
             }
@@ -184,16 +184,10 @@ namespace WebApplication2.Controllers
             }
             DateTime today = DateTime.Now;
             string dateString = today.ToString("yyyy-MM-dd");
-            Rides rideCreated = new Rides()
-            {
-                Date = dateString,
-                DriverEmail = ride.DriverEmail,
-                PassangerEmail = ride.PassengerEmail,
-                Price = price,
-                Status = "pending",
-                From = ride.From,
-                To = ride.To,
-            };
+            Rides rideCreated = _mapper.Map<Rides>(ride);
+            rideCreated.Date = dateString;
+            rideCreated.Price =  price;
+            rideCreated.Status = "pending";
             await _RidesRepository.AddAsync(rideCreated);
             await _RidesRepository.Save();
             Dictionary<String, dynamic> data = new Dictionary<String, dynamic>();

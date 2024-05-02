@@ -5,7 +5,7 @@ namespace WebApplication2.Dtos
     public class RequestRideDto
     {
         [Required]
-        public String? PassengerEmail { get; set; }
+        public String? PassangerEmail { get; set; }
         [Required]
         public String? DriverEmail { get; set; }
         [Required]
