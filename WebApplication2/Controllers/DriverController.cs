@@ -85,15 +85,6 @@ namespace WebApplication2.Controllers
                 return BadRequest("Email already exists");
             }
             Driver driver = _mapper.Map<Driver>(newDriver);
-            /*{
-                Email = newDriver.Email,
-                Gender = newDriver.Gender,
-                CarType = newDriver.CarType,
-                City = newDriver.City,
-                Region = newDriver.Region,
-                Smoking = newDriver.Smoking,
-                Username = newDriver.Username
-            };*/
             await _DriverRepository.AddAsync(driver);
             await _DriverRepository.Save();
 
