@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Data;
@@ -17,12 +18,14 @@ namespace WebApplication2.Controllers
         private readonly IDataRepository<Passanger> _PassangerRepository;
         private readonly IDataRepository<Credentials> _CredentialsRepository;
         private readonly AuthInterface _auth;
+        private readonly IMapper _mapper;
         public DriverController(
              IDataRepository<Driver> DriverRepository,
         IDataRepository<Rides> RidesRepository,
         IDataRepository<Passanger> PassangerRepository,
         IDataRepository<Credentials> CredentialsRepository,
-        AuthInterface auth
+        AuthInterface auth,
+        IMapper mapper
             )
         {
             _DriverRepository = DriverRepository;
@@ -30,6 +33,7 @@ namespace WebApplication2.Controllers
             _PassangerRepository =  PassangerRepository;
             _RidesRepository = RidesRepository;
             _CredentialsRepository = CredentialsRepository;
+            _mapper = mapper;
         }
 
 
@@ -80,8 +84,8 @@ namespace WebApplication2.Controllers
             {
                 return BadRequest("Email already exists");
             }
-            Driver driver = new Driver()
-            {
+            Driver driver = _mapper.Map<Driver>(newDriver);
+            /*{
                 Email = newDriver.Email,
                 Gender = newDriver.Gender,
                 CarType = newDriver.CarType,
@@ -89,7 +93,7 @@ namespace WebApplication2.Controllers
                 Region = newDriver.Region,
                 Smoking = newDriver.Smoking,
                 Username = newDriver.Username
-            };
+            };*/
             await _DriverRepository.AddAsync(driver);
             await _DriverRepository.Save();
 
