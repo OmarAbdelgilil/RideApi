@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using System.Collections.ObjectModel;
 using WebApplication1.Data;
+using WebApplication2.Migrations;
 using WebApplication2.Models;
 using WebApplication2.RealTime;
 
@@ -86,6 +87,11 @@ namespace WebApplication2.Controllers
             driver.Availability = false;
             await _DriverRepository.UpdateAsync(driver);
             await _DriverRepository.Save();
+            Dictionary<String,dynamic> data = new Dictionary<String,dynamic>();
+            data.Add("type", "block");
+            data.Add("data", "");
+            await _HubContext.Clients.All.SendAsync(email, data);
+            await _HubContext.Clients.All.SendAsync("driversUpdated", "");
             return Ok();
         }
         //[Authorize(Roles = "Admin")]
@@ -97,6 +103,7 @@ namespace WebApplication2.Controllers
             driver.Blocked = false;
             await _DriverRepository.UpdateAsync(driver);
             await _DriverRepository.Save();
+            await _HubContext.Clients.All.SendAsync("driversUpdated", "");
             return Ok();
         }
        // [Authorize(Roles = "Admin")]

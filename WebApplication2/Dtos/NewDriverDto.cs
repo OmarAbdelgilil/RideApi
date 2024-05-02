@@ -27,6 +27,7 @@ namespace WebApplication2.Dtos
         public String? Password { get; set; }
         [Required]
         public String? ConfirmPassword { get; set; }
+        public IFormFile File { get; set; }
         public String Role = "Driver";
     }
 }

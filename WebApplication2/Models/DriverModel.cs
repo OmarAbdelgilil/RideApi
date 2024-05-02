@@ -31,7 +31,9 @@ namespace WebApplication2.Models
         public Double Rating { get; set; } = 0;
         
         public Boolean Blocked { get; set; } = false;
-
+        [FileExtensions(Extensions = "jpg,jpeg,png")]
+        [DataType(DataType.ImageUrl)]
+        public string? ImagePath { get; set; }
         public  ICollection<Rides>? Rides { get; set; }
 
         

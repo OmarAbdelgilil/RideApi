@@ -190,6 +190,11 @@ namespace WebApplication2.Controllers
             rideCreated.Status = "pending";
             await _RidesRepository.AddAsync(rideCreated);
             await _RidesRepository.Save();
+            Dictionary<String, dynamic> data = new Dictionary<String, dynamic>();
+            data.Add("type", "rideCreated");
+            data.Add("data", rideCreated);
+            await _HubContext.Clients.All.SendAsync(ride.DriverEmail!, data);
+            await _HubContext.Clients.All.SendAsync("ridesUpdated", data);
             return Ok(rideCreated);
 
         }
@@ -213,6 +218,11 @@ namespace WebApplication2.Controllers
             ride.Status = "cancelled";
             await _RidesRepository.UpdateAsync(ride);
             await _RidesRepository.Save();
+            Dictionary<String, dynamic> data = new Dictionary<String, dynamic>();
+            data.Add("type", "rideUpdated");
+            data.Add("data", ride);
+            await _HubContext.Clients.All.SendAsync(ride.DriverEmail!, data);
+            await _HubContext.Clients.All.SendAsync("ridesUpdated", data);
             return Ok(ride);
 
         }
@@ -248,6 +258,11 @@ namespace WebApplication2.Controllers
             }
             await _RidesRepository.UpdateAsync(ride);
             await _DriverRepository.Save();
+            Dictionary<String, dynamic> data = new Dictionary<String, dynamic>();
+            data.Add("type", "rideUpdated");
+            data.Add("data", ride);
+            await _HubContext.Clients.All.SendAsync(ride.DriverEmail!, data);
+            await _HubContext.Clients.All.SendAsync("ridesUpdated", data);
             return Ok(ride);
         }
 
