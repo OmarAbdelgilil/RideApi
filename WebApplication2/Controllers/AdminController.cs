@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using System.Collections.ObjectModel;
+using System.Text.Json;
 using WebApplication1.Data;
 using WebApplication2.Auth;
 using WebApplication2.Dtos;
@@ -108,7 +109,7 @@ namespace WebApplication2.Controllers
             Dictionary<String,dynamic> data = new Dictionary<String,dynamic>();
             data.Add("type", "block");
             data.Add("data", "");
-            await _HubContext.Clients.All.SendAsync(email, data);
+            await _HubContext.Clients.All.SendAsync(email, JsonSerializer.Serialize(data));
             await _HubContext.Clients.All.SendAsync("driversUpdated", "");
             return Ok();
         }
