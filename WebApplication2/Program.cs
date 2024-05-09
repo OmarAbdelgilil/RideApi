@@ -74,9 +74,17 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseStaticFiles();
+string resourcesFolderPath = Path.Combine(Directory.GetCurrentDirectory(), "Resources");
+if (!Directory.Exists(resourcesFolderPath))
+{
+    Directory.CreateDirectory(resourcesFolderPath);
+    Console.WriteLine($"Folder '{resourcesFolderPath}' created successfully.");
+}
+
+// Configure static files middleware to serve files from the Resources folder
 app.UseStaticFiles(new StaticFileOptions()
 {
-    FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "Resources")),
+    FileProvider = new PhysicalFileProvider(resourcesFolderPath),
     RequestPath = new PathString("/Resources")
 });
 

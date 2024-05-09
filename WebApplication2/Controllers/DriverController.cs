@@ -212,7 +212,7 @@ namespace WebApplication2.Controllers
             Dictionary<String, dynamic> data = new Dictionary<String, dynamic>();
             data.Add("type", "rideUpdated");
             data.Add("data", ride);
-            await _HubContext.Clients.All.SendAsync(ride.PassangerEmail!, data);
+            await _HubContext.Clients.All.SendAsync(ride.PassangerEmail!, ride.Status);
             await _HubContext.Clients.All.SendAsync("ridesUpdated", data);
             return Ok(ride);
 
@@ -237,8 +237,8 @@ namespace WebApplication2.Controllers
             Dictionary<String, dynamic> data = new Dictionary<String, dynamic>();
             data.Add("type", "rideUpdated");
             data.Add("data", ride);
-            await _HubContext.Clients.All.SendAsync(ride.PassangerEmail!, data);
-            await _HubContext.Clients.All.SendAsync("ridesUpdated", data);
+            //await _HubContext.Clients.All.SendAsync("ridesUpdated", data);
+            await _HubContext.Clients.All.SendAsync(ride.PassangerEmail!, "ongoing");
             return Ok(ride);
         }
        // [Authorize(Roles = "Driver,Admin")]
@@ -261,7 +261,7 @@ namespace WebApplication2.Controllers
             Dictionary<String, dynamic> data = new Dictionary<String, dynamic>();
             data.Add("type", "rideUpdated");
             data.Add("data", ride);
-            await _HubContext.Clients.All.SendAsync(ride.PassangerEmail!, data);
+            await _HubContext.Clients.All.SendAsync(ride.PassangerEmail!, ride.Status);
             await _HubContext.Clients.All.SendAsync("ridesUpdated", data);
             return Ok(ride);
         }
