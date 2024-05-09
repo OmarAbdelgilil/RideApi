@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using System.Text.Json.Serialization;
+using System.Text.Json;
 using WebApplication1.Data;
 using WebApplication1.Helpers;
 using WebApplication2.Auth;
@@ -211,7 +213,12 @@ namespace WebApplication2.Controllers
             await _RidesRepository.Save();
             Dictionary<String, dynamic> data = new Dictionary<String, dynamic>();
             data.Add("type", "rideUpdated");
-            data.Add("data", ride);
+            var options = new JsonSerializerOptions
+            {
+                ReferenceHandler = ReferenceHandler.Preserve
+            };
+            data.Add("data", JsonSerializer.Serialize(ride, options));
+
             await _HubContext.Clients.All.SendAsync(ride.PassangerEmail!, ride.Status);
             await _HubContext.Clients.All.SendAsync("ridesUpdated", data);
             return Ok(ride);
@@ -236,9 +243,13 @@ namespace WebApplication2.Controllers
             await _RidesRepository.Save();
             Dictionary<String, dynamic> data = new Dictionary<String, dynamic>();
             data.Add("type", "rideUpdated");
-            data.Add("data", ride);
-            //await _HubContext.Clients.All.SendAsync("ridesUpdated", data);
-            await _HubContext.Clients.All.SendAsync(ride.PassangerEmail!, "ongoing");
+            var options = new JsonSerializerOptions
+            {
+                ReferenceHandler = ReferenceHandler.Preserve
+            };
+            data.Add("data", JsonSerializer.Serialize(ride, options));
+            await _HubContext.Clients.All.SendAsync("ridesUpdated", data);
+            await _HubContext.Clients.All.SendAsync(ride.PassangerEmail!, ride.Status);
             return Ok(ride);
         }
        // [Authorize(Roles = "Driver,Admin")]
@@ -260,7 +271,11 @@ namespace WebApplication2.Controllers
             await _RidesRepository.Save();
             Dictionary<String, dynamic> data = new Dictionary<String, dynamic>();
             data.Add("type", "rideUpdated");
-            data.Add("data", ride);
+            var options = new JsonSerializerOptions
+            {
+                ReferenceHandler = ReferenceHandler.Preserve
+            };
+            data.Add("data", JsonSerializer.Serialize(ride, options));
             await _HubContext.Clients.All.SendAsync(ride.PassangerEmail!, ride.Status);
             await _HubContext.Clients.All.SendAsync("ridesUpdated", data);
             return Ok(ride);

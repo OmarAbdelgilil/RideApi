@@ -92,7 +92,7 @@ namespace WebApplication2.Controllers
             data.Add("type", "block");
             data.Add("data", "");
             await _HubContext.Clients.All.SendAsync(email, JsonSerializer.Serialize(data));
-            await _HubContext.Clients.All.SendAsync("driversUpdated", "");
+            
             return Ok();
         }
         //[Authorize(Roles = "Admin")]
@@ -104,7 +104,6 @@ namespace WebApplication2.Controllers
             driver.Blocked = false;
             await _DriverRepository.UpdateAsync(driver);
             await _DriverRepository.Save();
-            await _HubContext.Clients.All.SendAsync("driversUpdated", "");
             return Ok();
         }
        // [Authorize(Roles = "Admin")]
