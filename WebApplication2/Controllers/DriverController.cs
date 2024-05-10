@@ -45,7 +45,7 @@ namespace WebApplication2.Controllers
         }
 
 
-        [Authorize(Roles = "Driver,Admin")]
+        [Authorize]
         [HttpGet("getDriverByEmail/{email}")]
         public async Task<IActionResult> GetDriverByEmail(string email)
         {

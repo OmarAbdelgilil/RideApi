@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.SignalR;
 using System.Collections.ObjectModel;
 using System.Text.Json;
 using WebApplication1.Data;
+using WebApplication2.Auth;
 using WebApplication2.Migrations;
 using WebApplication2.Models;
 using WebApplication2.RealTime;
@@ -19,7 +20,25 @@ namespace WebApplication2.Controllers
         private readonly IDataRepository<Driver> _DriverRepository;
         private readonly IDataRepository<Rides> _RidesRepository;
         private readonly IHubContext<SignalRHub> _HubContext;
-        public AdminController(IDataRepository<Rides> RidesRepository,IDataRepository<Driver> DriverRepository, IDataRepository<Credentials> CredentialsRepository, IDataRepository<Passanger> PassangerRepository,IHubContext<SignalRHub> hubContext) { _CredentialsRepository = CredentialsRepository; _PassangerRepository = PassangerRepository; _DriverRepository = DriverRepository;  _RidesRepository = RidesRepository; _HubContext = hubContext; }
+        private readonly AuthInterface _auth;
+        public AdminController(AuthInterface auth, IDataRepository<Rides> RidesRepository, IDataRepository<Driver> DriverRepository, IDataRepository<Credentials> CredentialsRepository, IDataRepository<Passanger> PassangerRepository, IHubContext<SignalRHub> hubContext) { _CredentialsRepository = CredentialsRepository; _auth = auth; _PassangerRepository = PassangerRepository; _DriverRepository = DriverRepository; _RidesRepository = RidesRepository; _HubContext = hubContext; }
+
+
+        [HttpPost("createAdmin")]
+        public async Task<IActionResult> CreateAdmin(String email, String password)
+        {
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest();
+            }
+            if (!await (_auth.Register(email, password, "Admin")))
+            {
+                return BadRequest("Email already exists");
+            }
+            return Ok("Admin Created Successfully");
+        }
+
 
         [Authorize(Roles = "Admin")]
         [HttpGet("getallPending")]
