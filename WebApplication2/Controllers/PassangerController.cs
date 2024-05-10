@@ -77,7 +77,7 @@ namespace WebApplication2.Controllers
         }
 
 
-        //[Authorize(Roles = "Passenger,Admin")]
+        [Authorize(Roles = "Passenger,Admin")]
         [HttpGet("getPassengerByEmail/{email}")]
         public async Task<IActionResult> GetPassengerByEmail(string email)
         {
@@ -93,7 +93,7 @@ namespace WebApplication2.Controllers
             return Ok(passanger);
 
         }
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         [HttpDelete("deletePassenger/{email}")]
         public async Task<IActionResult> DeletePassenger(String email)
         {
@@ -134,7 +134,7 @@ namespace WebApplication2.Controllers
             return Ok(passanger);
         }
    
-        //[Authorize(Roles = "Passenger,Admin")]
+        [Authorize(Roles = "Passenger,Admin")]
         [HttpPatch("updatePassenger")]
         public async Task<IActionResult> UpdatePassenger(String email, String fieldToUpdate, String newValue)
         {
@@ -237,7 +237,7 @@ namespace WebApplication2.Controllers
             return Ok(ride);
 
         }
-        //[Authorize(Roles = "Passenger")]
+        [Authorize(Roles = "Passenger")]
         [HttpPatch("payAndFeedback")]
         public async Task<IActionResult> PayAndFeedback(String id, int rating , string? feedback) {
             Rides ride = await _RidesRepository.GetByEmailAsync(id);

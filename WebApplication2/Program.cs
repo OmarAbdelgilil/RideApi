@@ -67,7 +67,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseCors("AllowOrigin");
 app.UseHttpsRedirection();
 
 
@@ -90,6 +90,6 @@ app.UseStaticFiles(new StaticFileOptions()
 
 
 app.MapControllers();
-app.UseCors("AllowOrigin");
+
 app.MapHub<SignalRHub>("/realTime");
 app.Run();
